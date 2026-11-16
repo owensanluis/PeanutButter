@@ -1,6 +1,6 @@
 package Controller;
 
-
+import java.sql.*;
 import Model.History;
 import Model.Logs;
 import Model.Product;
@@ -23,6 +23,14 @@ public class Main {
     public void init(){
         // Initialize a driver object
         sqlite = new SQLite();
+        
+        try (Connection conn = DriverManager.getConnection(sqlite.driverURL);
+                Statement stmt = conn.createStatement()) {
+            stmt.execute("ALTER TABLE users ADD COLUMN failed_attempts INTEGER DEFAULT 0");
+            stmt.execute("ALTER TABLE users ADD COLUMN last_login TEXT");
+        } catch (Exception e) {
+            //ignore error if column exist
+        }
 
 //        // Create a database
 //        sqlite.createNewDatabase();

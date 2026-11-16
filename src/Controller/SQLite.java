@@ -9,6 +9,7 @@ import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.sql.PreparedStatement;
 import java.util.ArrayList;
 
 public class SQLite {
@@ -179,24 +180,43 @@ public class SQLite {
         }
     }
     
-    public void addUser(String username, String password) {
-        String sql = "INSERT INTO users(username,password) VALUES('" + username + "','" + password + "')";
+    //MODIFIED - Added role
+    public void addUser(String username, String password, int role) {
+        String sql = "INSERT INTO users(username,password, role) VALUES(?,?,?)";
         
         try (Connection conn = DriverManager.getConnection(driverURL);
-            Statement stmt = conn.createStatement()){
-            stmt.execute(sql);
-            
-//      PREPARED STATEMENT EXAMPLE
-//      String sql = "INSERT INTO users(username,password) VALUES(?,?)";
-//      PreparedStatement pstmt = conn.prepareStatement(sql)) {
-//      pstmt.setString(1, username);
-//      pstmt.setString(2, password);
-//      pstmt.executeUpdate();
+            PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            pstmt.setString(2, password);
+            pstmt.setInt(3, role);
+            pstmt.executeUpdate();
         } catch (Exception ex) {
-            System.out.print(ex);
+            throw new RuntimeException("addUser failed", ex);
         }
     }
     
+    //NEW - getUserbyUsername: can look up exactly one user by username
+    public User getUserbyUsername(String username){
+        String sql = "SELECT id, username, password, role, locked, failed_attempts, last_login" +
+                "FROM users WHERE username = ?";
+        try (Connection conn = DriverManager.getConnection(driverURL);
+            PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            try (ResultSet rs = pstmt.executeQuery()){
+                if (rs.next()) {
+                    User u = new User(rs.getInt("id"), rs.getString("username"),
+                    rs.getString("password"), rs.getInt("role"), rs.getInt("locked"));
+                    u.setFailedAttempts(rs.getInt("failed_attempts"));
+                    u.setLastLogin(rs.getString("last_login"));
+                    
+                    return u;
+                }
+            }
+        }catch (Exception ex){
+            throw new RuntimeException("getUserByUsername failed", ex);
+        }
+        return null;
+    }
     
     public ArrayList<History> getHistory(){
         String sql = "SELECT id, username, name, stock, timestamp FROM history";
@@ -279,18 +299,6 @@ public class SQLite {
         return users;
     }
     
-    public void addUser(String username, String password, int role) {
-        String sql = "INSERT INTO users(username,password,role) VALUES('" + username + "','" + password + "','" + role + "')";
-        
-        try (Connection conn = DriverManager.getConnection(driverURL);
-            Statement stmt = conn.createStatement()){
-            stmt.execute(sql);
-            
-        } catch (Exception ex) {
-            System.out.print(ex);
-        }
-    }
-    
     public void removeUser(String username) {
         String sql = "DELETE FROM users WHERE username='" + username + "';";
 
@@ -316,5 +324,35 @@ public class SQLite {
             System.out.print(ex);
         }
         return product;
+    }
+    
+    //NEW - registerFailedLogin: increments failed attempts and auto disable
+    // role at 5 (Brute Force Mitigation)
+    public void registerFailedLogin(String username){
+        String sql = "UPDATE users SET failed_attempts = failed_attempts + 1, " +
+                "role = CASE WHEN failed_attempts + 1 >= 5 THEN 1 ELSE role end" +
+                "WHERE username = ?";
+        
+        try (Connection conn = DriverManager.getConnection(driverURL);
+         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            pstmt.executeUpdate();
+        } catch (Exception ex) {
+            throw new RuntimeException("registerFailedLogin failed", ex);
+        }
+    }
+    
+    //NEW - registerSuccessfulLogin: reset counter login on success
+    // New: reset counter + stamp last_login on success
+    public void registerSuccessfulLogin(String username, String timestamp) {
+        String sql = "UPDATE users SET failed_attempts = 0, last_login = ? WHERE username = ?";
+        try (Connection conn = DriverManager.getConnection(driverURL);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, timestamp);
+            pstmt.setString(2, username);
+            pstmt.executeUpdate();
+        } catch (Exception ex) {
+            throw new RuntimeException("registerSuccessfulLogin failed", ex);
+        }
     }
 }
