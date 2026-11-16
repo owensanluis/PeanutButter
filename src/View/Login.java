@@ -1,6 +1,12 @@
 
 package View;
 
+import Controller.PasswordUtils;
+import Model.User;
+import java.sql.Timestamp;
+import java.util.Date;
+import javax.swing.JOptionPane;
+
 public class Login extends javax.swing.JPanel {
 
     public Frame frame;
@@ -90,6 +96,37 @@ public class Login extends javax.swing.JPanel {
         frame.registerNav();
     }//GEN-LAST:event_registerBtnActionPerformed
 
+    private void btnLoginActionPerformed(java.awt.event.ActionEvent evt) {
+        String username = txtUsername.getText();
+        char[] passwordChars = txtPassword.getPassword();
+        String password = new String(passwordChars);
+        
+        User user = frame.main.sqlite.getUserbyUsername(username);
+        
+        boolean invalid = (user == null)
+                || user.getRole() == 1
+                || !PasswordUtils.verify(password, user.getPassword());
+        
+        if (invalid) {
+            if (user != null && user.getRole() != 1) {
+                frame.main.sqlite.registerFailedLogin(username);
+                frame.main.sqlite.addLogs("AUTH_FAILURE", username, "Failed login attempt",
+                        new Timestamp(new Date().getTime()).toString());
+            }
+            JOptionPane.showMessageDialog(this, "Invalid username and/or password.");
+            return;
+        }
+        
+        String now = new Timestamp(new Date().getTime()).toString();
+        String previousLogin = user.getLastLogin();
+        frame.main.sqlite.registerSuccessfulLogin(username, now);
+        frame.main.sqlite.addLogs("AUTH_SUCCESS", username, "Successful login!", now);
+        
+        JOptionPane.showMessageDialog(this, "Last Login" + (previousLogin == null ?
+                 "First login" : previousLogin));
+        
+        frame.goToHomeForRole(user);
+    }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel jLabel1;

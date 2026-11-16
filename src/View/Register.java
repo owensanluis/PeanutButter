@@ -1,6 +1,9 @@
 
 package View;
 
+import java.util.regex.Pattern;
+import javax.swing.JOptionPane;
+
 public class Register extends javax.swing.JPanel {
 
     public Frame frame;
@@ -8,6 +11,11 @@ public class Register extends javax.swing.JPanel {
     public Register() {
         initComponents();
     }
+    
+    private static final Pattern USERNAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_]{3,20}$");
+    // at least 1 upper, 1 lower, 1 digit, 1 symbol, length 8-64
+    private static final Pattern PASSWORD_PATTERN =
+        Pattern.compile("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^a-zA-Z0-9]).{8,64}$");
 
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
@@ -101,6 +109,29 @@ public class Register extends javax.swing.JPanel {
         frame.loginNav();
     }//GEN-LAST:event_registerBtnActionPerformed
 
+    private void btnRegisterActionPerformed(java.awt.event.ActionEvent evt) {
+        String username = txtUsername.getText();
+        String password = new String(txtPassword.getPassword());
+        String confirm = new String(txtConfirmPassword.getPassword());
+
+        if (!USERNAME_PATTERN.matcher(username).matches()) {
+            JOptionPane.showMessageDialog(this, "Registration failed.");
+            return;
+        }
+        if (!PASSWORD_PATTERN.matcher(password).matches()) {
+            JOptionPane.showMessageDialog(this,
+                "Password must be 8-64 characters and include upper, lower, digit, and symbol.");
+            return;
+        }
+        if (!password.equals(confirm)) {
+            JOptionPane.showMessageDialog(this, "Passwords do not match.");
+            return;
+        }
+
+        frame.main.sqlite.addUser(username, password, 2);
+        JOptionPane.showMessageDialog(this, "Registration successful.");
+    }
+    
     private void backBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_backBtnActionPerformed
         frame.loginNav();
     }//GEN-LAST:event_backBtnActionPerformed

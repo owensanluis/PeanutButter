@@ -1,10 +1,14 @@
 package View;
 
 import Controller.Main;
+import Controller.SQLite;
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.awt.Dimension;
 import javax.swing.WindowConstants;
+import javax.swing.JOptionPane;
+import java.sql.Timestamp;
+import java.util.Date;
 
 public class Frame extends javax.swing.JFrame {
 
@@ -258,6 +262,30 @@ public class Frame extends javax.swing.JFrame {
     
     public void registerAction(String username, String password, String confpass){
         main.sqlite.addUser(username, password);
+    }
+    
+    public void goToHomeForRole(User user) {
+        switch (user.getRole()) {
+            case 5: showPanel(new AdminHome(this, user));   break;
+            case 4: showPanel(new ManagerHome(this, user)); break;
+            case 3: showPanel(new StaffHome(this, user));   break;
+            case 2: showPanel(new ClientHome(this, user));  break;
+            default:
+                // role 1 (Disabled) or anything unexpected -> fail closed
+                JOptionPane.showMessageDialog(this, "Access denied.");
+                showPanel(new Login(this));
+        }
+    }
+    
+    private void btnViewLogsActionPerformed(java.awt.event.ActionEvent evt) {
+        if (currentUser.getRole() != 5) {
+            frame.main.sqlite.addLogs("ACCESS_VIOLATION", currentUser.getUsername(),
+                "Attempted to access Logs panel without Admin privileges",
+                new Timestamp(new Date().getTime()).toString());
+            JOptionPane.showMessageDialog(this, "Access denied.");
+            return;
+        }
+        frame.showPanel(new MgmtLogs(frame, currentUser))
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
