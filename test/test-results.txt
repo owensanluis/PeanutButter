@@ -1,0 +1,151 @@
+warning: [options] bootstrap class path not set in conjunction with -source 8
+warning: [options] source value 8 is obsolete and will be removed in a future release
+warning: [options] target value 8 is obsolete and will be removed in a future release
+warning: [options] To suppress warnings about obsolete options, use -Xlint:-options.
+4 warnings
+warning: [options] bootstrap class path not set in conjunction with -source 8
+warning: [options] source value 8 is obsolete and will be removed in a future release
+warning: [options] target value 8 is obsolete and will be removed in a future release
+warning: [options] To suppress warnings about obsolete options, use -Xlint:-options.
+4 warnings
+PASS anonymous catalog denied
+PASS anonymous users denied
+PASS anonymous logs denied
+PASS anonymous history denied
+PASS unknown resource denied
+PASS versioned PBKDF2 storage
+PASS unique per-user salts
+PASS hash verification
+PASS malformed hash fails closed
+PASS invalid username rejected: length=2
+PASS invalid username rejected: length=3
+PASS invalid username rejected: length=13
+PASS invalid username rejected: length=8
+PASS invalid username rejected: length=9
+PASS invalid username rejected: length=33
+PASS invalid password rejected: length=7
+PASS invalid password rejected: length=9
+PASS invalid password rejected: length=9
+PASS invalid password rejected: length=9
+PASS invalid password rejected: length=9
+PASS invalid password rejected: length=8
+PASS invalid password rejected: length=65
+PASS confirmation mismatch rejected
+PASS 8 and 64 character password boundaries accepted
+PASS duplicate registration rejected
+PASS unknown account login denied
+PASS login injection denied
+PASS failed login 1
+PASS failed login 2
+PASS failed login 3
+PASS failed login 4
+PASS not disabled before fifth failure
+PASS fifth failure denied
+PASS exact fifth failure disables role
+PASS correct password cannot bypass disabled role
+PASS lockout persists across application restart
+PASS login admin
+PASS login client2
+PASS admin unlock resets failure counter
+PASS login client2
+PASS previous failed attempt status shown
+PASS login client2
+PASS previous successful attempt status shown
+PASS success resets consecutive failures
+PASS complete 6-state authorization matrix
+PASS login staff
+PASS staff cannot read history
+PASS staff cannot read users
+PASS staff cannot read logs
+PASS staff cannot purchase
+PASS invalid stock rejected: -1
+PASS invalid stock rejected: 100001
+PASS invalid stock rejected: 1.5
+PASS invalid stock rejected: 999999999999
+PASS invalid stock rejected:  1
+PASS invalid stock rejected: 1 
+PASS invalid price rejected: NaN
+PASS invalid price rejected: Infinity
+PASS invalid price rejected: 0
+PASS invalid price rejected: -1
+PASS invalid price rejected: 1000000.01
+PASS invalid price rejected: 1.001
+PASS invalid price rejected: 1e3
+PASS invalid price rejected:  1
+PASS product text injection rejected
+PASS duplicate product rejected
+PASS max stock and price accepted
+PASS login client1
+PASS client direct product mutation denied
+PASS client direct admin navigation denied
+PASS client privilege escalation denied
+PASS client cannot clear logs
+PASS zero purchase rejected
+PASS overselling rejected
+PASS rejected purchase leaves stock unchanged
+PASS purchase history created
+PASS purchase deducts exact quantity
+PASS login client2
+PASS client cannot read another customer's history
+PASS search cannot bypass history ownership
+PASS login manager
+PASS manager reads all history
+PASS history retains price after rename and deletion
+PASS history injection rejected
+PASS oversize search rejected
+PASS login admin
+PASS admin is not business superuser
+PASS admin cannot read purchases
+PASS admin cannot manage products
+PASS out of range role rejected
+PASS noncanonical role rejected
+PASS self deletion denied
+PASS credential material not exposed in user list
+PASS second session established
+PASS role change revokes existing session
+PASS password reset requires current admin password
+PASS failed reauthentication clears session
+PASS login client1
+PASS client cannot reset another password
+PASS self password change logs out
+PASS only new password authenticates
+PASS login admin
+PASS login client1
+PASS login staff
+PASS login client1
+PASS database failure reported generically
+PASS database failure clears session
+PASS transaction rolls back stock on history failure
+PASS login staff
+PASS concurrent purchase prevents overselling
+PASS login admin
+PASS timestamped log AUTH_SUCCESS
+PASS timestamped log AUTH_FAILURE
+PASS timestamped log ACCESS_VIOLATION
+PASS timestamped log VALIDATION_FAILURE
+PASS audit log excludes passwords
+PASS log clearing leaves accountability record
+PASS deleted account denied
+PASS login admin
+PASS login client2
+PASS recreated username cannot inherit deleted account history
+PASS failed login with fresh service
+PASS login admin
+PASS administrator can disable staff
+PASS login admin
+PASS login staff
+PASS unlock restores staff role
+PASS masked UI passwordFld
+PASS masked UI passwordFld
+PASS masked UI confpassFld
+PASS admin panel cannot show products
+PASS client panel cannot show logs
+PASS staff panel cannot show history
+PASS all four Swing home panels populate
+PASS legacy plaintext credentials invalidated
+PASS schema migration is idempotent
+PASS login client1
+PASS authorization database error fails closed
+PASS authorization error revokes session
+PASS database login failure returns generic authentication denial
+RESULT: 140 checks passed.

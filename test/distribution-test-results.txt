@@ -1,0 +1,1 @@
+PASS packaged JAR: all five accounts, roles, catalog, purchase, history, JDBC native loading and database location from a different working directory
