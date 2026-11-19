@@ -15,6 +15,15 @@ public class SQLite {
     private String previousUse = "No previous account use.";
     private final String dummyHash = PasswordUtils.hash("DummyPassword!09");
     public static final String AUTH_FAILURE = "Invalid username and/or password";
+    private boolean lastLoginDisabled = false;
+
+    public enum LoginStatus {
+        SUCCESS,
+        INVALID_CREDENTIALS,
+        NEWLY_DISABLED,
+        ALREADY_DISABLED
+    }
+    private LoginStatus lastLoginStatus = LoginStatus.INVALID_CREDENTIALS;
 
     public SQLite() { this(databasePath()); }
     public SQLite(Path path) { driverURL = "jdbc:sqlite:" + path.toAbsolutePath(); initialize(); }
@@ -158,15 +167,33 @@ public class SQLite {
 
     public boolean login(String name, String pass) {
         logout();
-        try { return transaction(c -> authenticate(c, name, pass, true)); }
-        catch (AppException ex) { logout(); return false; }
+        lastLoginStatus = LoginStatus.INVALID_CREDENTIALS;
+
+        try {
+            return transaction(c -> authenticate(c, name, pass, true));
+        } catch (AppException ex) {
+            logout();
+            return false;
+        }
     }
+
     private boolean authenticate(Connection c, String name, String pass, boolean establish) throws SQLException {
         boolean inputOK = usernameOK(name) && pass != null && pass.length() >= 1 && pass.length() <= 64;
         if (!inputOK) audit(c, "VALIDATION_FAILURE", "anonymous", "Rejected authentication input");
         User u = usernameOK(name) ? lookup(c, name) : null;
         boolean matched = PasswordUtils.verify(inputOK ? pass : "Invalid!01", u == null ? dummyHash : u.getPassword());
+
         boolean ok = inputOK && matched && u != null && u.getRole() >= 2 && u.getRole() <= 5 && u.getLocked() == 0;
+        if (establish) {
+            if (ok) {
+                lastLoginStatus = LoginStatus.SUCCESS;
+            } else if (inputOK && matched && u != null && u.getLocked() != 0) {
+                lastLoginStatus = LoginStatus.ALREADY_DISABLED;
+            } else {
+                lastLoginStatus = LoginStatus.INVALID_CREDENTIALS;
+            }
+        }
+
         String actor = usernameOK(name) ? name : "anonymous";
         if (u != null) {
             String priorTime = null, priorStatus = null;
@@ -181,7 +208,33 @@ public class SQLite {
                     try (PreparedStatement p = statement(c, "SELECT session_version FROM users WHERE id=?", sessionId); ResultSet r = p.executeQuery()) { r.next(); sessionVersion = r.getInt(1); }
                 }
             } else {
-                update(c, "UPDATE users SET failed_attempts=MIN(failed_attempts+1,5),previous_role=CASE WHEN role BETWEEN 2 AND 5 THEN role ELSE previous_role END,role=CASE WHEN failed_attempts+1>=5 THEN 1 ELSE role END,locked=CASE WHEN failed_attempts+1>=5 THEN 1 ELSE locked END,last_attempt=?,last_status=? WHERE id=?", now(), "FAILURE", u.getId());
+                int attempts = 0;
+
+                try (PreparedStatement p = statement(c,
+                        "SELECT failed_attempts FROM users WHERE id=?", u.getId());
+                     ResultSet r = p.executeQuery()) {
+
+                    if (r.next()) {
+                        attempts = r.getInt("failed_attempts");
+                    }
+                }
+
+                // Only identify the moment an active account becomes disabled.
+                boolean newlyDisabled = u.getLocked() == 0 && attempts == 4;
+
+                update(c,
+                        "UPDATE users SET " +
+                                "failed_attempts=MIN(failed_attempts+1,5)," +
+                                "previous_role=CASE WHEN role BETWEEN 2 AND 5 THEN role ELSE previous_role END," +
+                                "role=CASE WHEN failed_attempts+1>=5 THEN 1 ELSE role END," +
+                                "locked=CASE WHEN failed_attempts+1>=5 THEN 1 ELSE locked END," +
+                                "last_attempt=?,last_status=? WHERE id=?",
+                        now(), "FAILURE", u.getId()
+                );
+
+                if (establish && newlyDisabled) {
+                    lastLoginStatus = LoginStatus.NEWLY_DISABLED;
+                }
             }
         }
         audit(c, ok ? "AUTH_SUCCESS" : "AUTH_FAILURE", actor, establish ? "Login attempt" : "Critical operation reauthentication");
@@ -321,5 +374,13 @@ public class SQLite {
     }
     public void clearLogs() {
         transaction(c -> { require(c, LOGS); update(c, "DELETE FROM logs"); audit(c, "LOG_CLEAR", sessionName, "Administrator cleared security logs"); return null; });
+    }
+
+    public boolean wasLastLoginDisabled() {
+        return lastLoginDisabled;
+    }
+
+    public LoginStatus getLastLoginStatus() {
+        return lastLoginStatus;
     }
 }

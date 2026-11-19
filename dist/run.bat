@@ -1,3 +1,3 @@
 @echo off
 cd /d "%~dp0"
-java -jar CSSECDV.jar
+java -cp "CSSECDV.jar;lib/*" Controller.Main

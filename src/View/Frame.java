@@ -248,11 +248,14 @@ public class Frame extends javax.swing.JFrame {
             PasswordDialog.change(this, main.sqlite, main.sqlite.getSessionName());
             if (!main.sqlite.isSignedIn()) loginNav();
         });
-        menu.add(passwordButton); setJMenuBar(menu);
+        menu.add(passwordButton); 
+        setJMenuBar(menu);
+        menu.setVisible(false);
         this.setVisible(true);
     }
     
     public void mainNav(){
+        getJMenuBar().setVisible(true);
         int role = main.sqlite.currentRole();
         adminBtn.setVisible(role == 5); managerBtn.setVisible(role == 4);
         staffBtn.setVisible(role == 3); clientBtn.setVisible(role == 2);
@@ -261,6 +264,7 @@ public class Frame extends javax.swing.JFrame {
     }
     
     public void loginNav(){
+        getJMenuBar().setVisible(false);
         main.sqlite.logout();
         loginPnl.clearFields(); registerPnl.clearFields();
         adminHomePnl.clearData(); managerHomePnl.clearData(); staffHomePnl.clearData(); clientHomePnl.clearData();
@@ -269,6 +273,7 @@ public class Frame extends javax.swing.JFrame {
     
     public void registerNav(){
         loginNav();
+        getJMenuBar().setVisible(false);
         frameView.show(Container, "registerPnl");
     }
     
@@ -277,13 +282,48 @@ public class Frame extends javax.swing.JFrame {
         JOptionPane.showMessageDialog(this, "Registration successful. Please sign in.");
         loginNav();
     }
+
     public void loginAction(String username, String password) {
         if (!main.sqlite.login(username, password)) {
-            JOptionPane.showMessageDialog(this, SQLite.AUTH_FAILURE); return;
+
+            switch (main.sqlite.getLastLoginStatus()) {
+                case NEWLY_DISABLED:
+                    JOptionPane.showMessageDialog(
+                            this,
+                            "Your account has been disabled after 5 failed login attempts. " +
+                                    "Please contact an administrator.",
+                            "Account Disabled",
+                            JOptionPane.WARNING_MESSAGE
+                    );
+                    break;
+
+                case ALREADY_DISABLED:
+                    JOptionPane.showMessageDialog(
+                            this,
+                            "Your account is currently disabled. " +
+                                    "Please contact an administrator.",
+                            "Account Disabled",
+                            JOptionPane.WARNING_MESSAGE
+                    );
+                    break;
+
+                default:
+                    JOptionPane.showMessageDialog(
+                            this,
+                            SQLite.AUTH_FAILURE,
+                            "Login Failed",
+                            JOptionPane.ERROR_MESSAGE
+                    );
+                    break;
+            }
+
+            return;
         }
+
         mainNav();
         JOptionPane.showMessageDialog(this, main.sqlite.getPreviousUse());
     }
+
     private void showHome(int role) {
         Controller.AccessControl.Resource[] homes = {
             Controller.AccessControl.Resource.HOME_CLIENT, Controller.AccessControl.Resource.HOME_STAFF,
